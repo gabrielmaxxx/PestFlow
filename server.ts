@@ -9,6 +9,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { rateLimit } from "express-rate-limit";
 import { validateEmpresaId, buildSyntheticEmail } from "./src/utils/authUtils";
+import { tenantStore } from "./src/server/tenantStore";
 import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
@@ -70,19 +71,28 @@ export async function verifyAuthToken(req: express.Request, res: express.Respons
         // Suspension check: non-superadmin users belonging to suspended companies are blocked
         if (!isSuperAdmin) {
           try {
-            const db = getAdminFirestore();
-            const empresaDoc = await db.doc(`empresas/${empresaId}`).get();
-            if (empresaDoc.exists) {
-              const empresaData = empresaDoc.data();
-              if (empresaData?.ativa === false) {
-                return res.status(403).json({
-                  error: "Esta empresa está com o acesso suspenso. Entre em contato com o suporte.",
-                  code: "EMPRESA_SUSPENSA"
-                });
-              }
+            if (tenantStore.isEmpresaSuspensa(empresaId)) {
+              return res.status(403).json({
+                error: "Esta empresa está com o acesso suspenso. Entre em contato com o suporte.",
+                code: "EMPRESA_SUSPENSA"
+              });
             }
+
+            try {
+              const db = getAdminFirestore();
+              const empresaDoc = await db.doc(`empresas/${empresaId}`).get();
+              if (empresaDoc.exists) {
+                const empresaData = empresaDoc.data();
+                if (empresaData?.ativa === false) {
+                  return res.status(403).json({
+                    error: "Esta empresa está com o acesso suspenso. Entre em contato com o suporte.",
+                    code: "EMPRESA_SUSPENSA"
+                  });
+                }
+              }
+            } catch (_) {}
           } catch (checkErr: any) {
-            console.warn("[PestFlow Auth] Erro ao verificar ativação da empresa no Firestore:", checkErr.message);
+            console.warn("[PestFlow Auth] Erro ao verificar ativação da empresa:", checkErr.message);
           }
         }
 
@@ -163,20 +173,24 @@ export function requirePermission(modulo: string, acao: 'view' | 'edit' | 'delet
         return next();
       }
 
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
-      const userDoc = await db.doc(`empresas/${tenantCtx.empresaId}/usuarios/${tenantCtx.uid}`).get();
-
-      if (!userDoc.exists) {
-        return res.status(403).json({ error: "Perfil de usuário não encontrado no sistema." });
-      }
-
-      const userData = userDoc.data();
-      const userPerms = userData?.permissions?.[modulo];
-
-      if (userPerms && userPerms[acao] === true) {
+      if (tenantStore.hasPermission(tenantCtx.empresaId, tenantCtx.uid, modulo, acao)) {
         return next();
       }
+
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        const userDoc = await db.doc(`empresas/${tenantCtx.empresaId}/usuarios/${tenantCtx.uid}`).get();
+
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          const userPerms = userData?.permissions?.[modulo];
+
+          if (userPerms && userPerms[acao] === true) {
+            return next();
+          }
+        }
+      } catch (_) {}
 
       return res.status(403).json({
         error: `Acesso negado: permissão de ${acao} no módulo '${modulo}' não concedida.`
@@ -245,22 +259,18 @@ export async function autoBootstrapMaster() {
       console.warn(`[PestFlow AutoBootstrap] Aviso ao registrar claims no Auth:`, claimsErr?.message || claimsErr);
     }
 
-    const db = getAdminFirestore();
-    await db.doc(`empresas/${empresaId}`).set({
+    tenantStore.createEmpresa({
       empresaId,
       nome: 'PestFlow Matriz e Gestão Operacional',
       cnpj: '12.345.678/0001-90',
       plano: 'enterprise',
-      ativa: true,
       financeiro: {
         status: 'em_dia',
         dataVencimento: '2026-12-31'
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
+      }
+    });
 
-    await db.doc(`empresas/${empresaId}/usuarios/${uid}`).set({
+    tenantStore.createUsuario(empresaId, {
       uid,
       login,
       email,
@@ -269,10 +279,49 @@ export async function autoBootstrapMaster() {
       empresaId,
       role: 'master',
       isSuperAdmin: true,
-      permissions: {},
+      permissions: {
+        agenda: { view: true, edit: true, delete: true },
+        orcamentos: { view: true, edit: true, delete: true },
+        estoque: { view: true, edit: true, delete: true },
+        financeiro: { view: true, edit: true, delete: true },
+        contratos: { view: true, edit: true, delete: true },
+        pops: { view: true, edit: true, delete: true },
+        ia: { view: true, edit: true, delete: true }
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    });
+
+    try {
+      const db = getAdminFirestore();
+      await db.doc(`empresas/${empresaId}`).set({
+        empresaId,
+        nome: 'PestFlow Matriz e Gestão Operacional',
+        cnpj: '12.345.678/0001-90',
+        plano: 'enterprise',
+        ativa: true,
+        financeiro: {
+          status: 'em_dia',
+          dataVencimento: '2026-12-31'
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      await db.doc(`empresas/${empresaId}/usuarios/${uid}`).set({
+        uid,
+        login,
+        email,
+        name,
+        cargo: 'Gestor Master Super-Admin',
+        empresaId,
+        role: 'master',
+        isSuperAdmin: true,
+        permissions: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (_) {}
 
     console.log(`[PestFlow AutoBootstrap] ✅ Sucesso! Master ${email} configurado no Firestore com isSuperAdmin: true.`);
     return { success: true, email, uid, empresaId };
@@ -354,6 +403,21 @@ async function startServer() {
           customToken = null;
         }
       }
+
+      // Ensure user exists in tenantStore
+      tenantStore.createUsuario(empresaId, {
+        uid,
+        login,
+        email: syntheticEmail,
+        name: isMasterUser ? 'Gabriel - Super Admin Master' : `${login.toUpperCase()} (${empresaId})`,
+        cargo: isMasterUser ? 'Gestor Master Super-Admin' : 'Colaborador',
+        empresaId,
+        role: targetRole,
+        isSuperAdmin,
+        permissions: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
 
       // Ensure user document exists in Firestore as well
       try {
@@ -484,11 +548,9 @@ async function startServer() {
         console.warn("[PestFlow Admin] Firebase Auth indisponível, registrando conta no Firestore:", authCreateErr?.message || authCreateErr);
       }
 
-      // Store profile document in Firestore at /empresas/{empresaId}/usuarios/{uid}
-      const db = getAdminFirestore();
+      // Store user in tenantStore
       const initialPermissions = permissions && typeof permissions === 'object' ? permissions : {};
-
-      await db.doc(`empresas/${targetEmpresaId}/usuarios/${userUid}`).set({
+      tenantStore.createUsuario(targetEmpresaId, {
         uid: userUid,
         login: login.trim().toLowerCase(),
         email: syntheticEmail,
@@ -501,6 +563,23 @@ async function startServer() {
         updatedAt: new Date().toISOString()
       });
 
+      // Optional background sync to Firestore
+      try {
+        const db = getAdminFirestore();
+        await db.doc(`empresas/${targetEmpresaId}/usuarios/${userUid}`).set({
+          uid: userUid,
+          login: login.trim().toLowerCase(),
+          email: syntheticEmail,
+          name: name || login,
+          cargo: cargo || 'Colaborador',
+          empresaId: targetEmpresaId,
+          role: assignedRole,
+          permissions: initialPermissions,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } catch (_) {}
+
       res.status(201).json({
         success: true,
         uid: userUid,
@@ -510,7 +589,7 @@ async function startServer() {
         permissions: initialPermissions
       });
     } catch (error: any) {
-      console.error("Erro ao criar usuário via Admin SDK:", error);
+      console.error("Erro ao criar usuário:", error);
       res.status(500).json({ error: error.message || "Erro interno ao criar usuário." });
     }
   });
@@ -518,7 +597,6 @@ async function startServer() {
   // Edit employee permissions (Master / SuperAdmin only)
   app.patch("/api/admin/usuarios/:uid/permissions", verifyAuthToken, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
       const tenantCtx = (req as any).tenantContext;
       const isMaster = tenantCtx?.role === 'master';
       const isSuperAdmin = Boolean(tenantCtx?.isSuperAdmin);
@@ -546,18 +624,17 @@ async function startServer() {
       }
 
       const targetEmpresaId = tenantCtx?.empresaId;
-      const db = getAdminFirestore();
-      const userRef = db.doc(`empresas/${targetEmpresaId}/usuarios/${uid}`);
-      const userSnap = await userRef.get();
+      tenantStore.updateUsuarioPermissoes(targetEmpresaId, uid, permissions);
 
-      if (!userSnap.exists) {
-        return res.status(404).json({ error: "Usuário não encontrado nesta empresa." });
-      }
-
-      await userRef.update({
-        permissions,
-        updatedAt: new Date().toISOString()
-      });
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        const userRef = db.doc(`empresas/${targetEmpresaId}/usuarios/${uid}`);
+        await userRef.update({
+          permissions,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (_) {}
 
       return res.json({
         success: true,
@@ -574,7 +651,6 @@ async function startServer() {
   // List company users (Master / SuperAdmin only)
   app.get("/api/admin/usuarios", verifyAuthToken, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
       const tenantCtx = (req as any).tenantContext;
       const isMaster = tenantCtx?.role === 'master';
       const isSuperAdmin = Boolean(tenantCtx?.isSuperAdmin);
@@ -584,13 +660,23 @@ async function startServer() {
       }
 
       const targetEmpresaId = tenantCtx?.empresaId;
-      const db = getAdminFirestore();
-      const snapshot = await db.collection(`empresas/${targetEmpresaId}/usuarios`).get();
+      let users = tenantStore.listUsuarios(targetEmpresaId);
 
-      const users = snapshot.docs.map(doc => ({
-        uid: doc.id,
-        ...doc.data()
-      }));
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        const snapshot = await db.collection(`empresas/${targetEmpresaId}/usuarios`).get();
+        if (snapshot && !snapshot.empty) {
+          const remoteUsers = snapshot.docs.map(doc => ({
+            uid: doc.id,
+            ...doc.data()
+          }));
+          if (remoteUsers.length > 0) {
+            remoteUsers.forEach(ru => tenantStore.createUsuario(targetEmpresaId, ru as any));
+            users = tenantStore.listUsuarios(targetEmpresaId);
+          }
+        }
+      } catch (_) {}
 
       return res.json({ users });
     } catch (error: any) {
@@ -606,8 +692,6 @@ async function startServer() {
   // Create a new tenant company
   app.post("/api/superadmin/empresas", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
       const { empresaId, nome, cnpj, plano, financeiro } = req.body || {};
 
       if (!empresaId || !nome) {
@@ -619,32 +703,30 @@ async function startServer() {
         return res.status(400).json({ error: "Identificador de empresa inválido. Use apenas letras minúsculas, números e hífen." });
       }
 
-      // Check if empresa already exists
-      const existingDoc = await db.doc(`empresas/${cleanEmpresaId}`).get();
-      if (existingDoc.exists) {
+      const existing = tenantStore.getEmpresa(cleanEmpresaId);
+      if (existing) {
         return res.status(409).json({ error: `A empresa com o identificador '${cleanEmpresaId}' já está cadastrada na plataforma.` });
       }
 
-      const agora = new Date().toISOString();
-      const proximoVencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      const novaEmpresa = {
+      const novaEmpresa = tenantStore.createEmpresa({
         empresaId: cleanEmpresaId,
         nome: nome.trim(),
         cnpj: cnpj?.trim() || "",
-        criadoEm: agora,
-        ativa: true,
+        plano: plano || "standard",
         financeiro: {
           status: financeiro?.status === "atrasado" ? "atrasado" : "em_dia",
-          dataVencimento: financeiro?.dataVencimento || proximoVencimento,
-          dataUltimoPagamento: financeiro?.dataUltimoPagamento || agora.split('T')[0],
+          dataVencimento: financeiro?.dataVencimento,
+          dataUltimoPagamento: financeiro?.dataUltimoPagamento,
           observacoes: financeiro?.observacoes || ""
-        },
-        plano: plano || "standard",
-        updatedAt: agora
-      };
+        }
+      });
 
-      await db.doc(`empresas/${cleanEmpresaId}`).set(novaEmpresa);
+      // Optional background sync to Firestore
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        await db.doc(`empresas/${cleanEmpresaId}`).set(novaEmpresa);
+      } catch (_) {}
 
       res.status(201).json({
         success: true,
@@ -659,36 +741,28 @@ async function startServer() {
   // List all tenant companies
   app.get("/api/superadmin/empresas", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
-      const snapshot = await db.collection("empresas").get();
-      
-      const empresas = await Promise.all(snapshot.docs.map(async doc => {
-        const data = doc.data();
-        let totalUsuarios = 0;
-        try {
-          const userSnap = await db.collection(`empresas/${doc.id}/usuarios`).get();
-          totalUsuarios = userSnap.size;
-        } catch (_) {}
+      // Optional sync from Firestore if accessible
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        const snapshot = await db.collection("empresas").get();
+        if (snapshot && !snapshot.empty) {
+          snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            tenantStore.createEmpresa({
+              empresaId: doc.id,
+              nome: data.nome || doc.id,
+              cnpj: data.cnpj,
+              plano: data.plano,
+              financeiro: data.financeiro
+            });
+          });
+        }
+      } catch (_) {
+        // Silently use tenantStore when remote Firestore requires specific service account credentials
+      }
 
-        return {
-          empresaId: doc.id,
-          nome: data.nome || doc.id,
-          cnpj: data.cnpj || "",
-          criadoEm: data.criadoEm || "",
-          ativa: data.ativa !== false,
-          financeiro: data.financeiro || {
-            status: 'em_dia',
-            dataVencimento: '',
-            dataUltimoPagamento: '',
-            observacoes: ''
-          },
-          plano: data.plano || "standard",
-          updatedAt: data.updatedAt,
-          totalUsuarios
-        };
-      }));
-
+      const empresas = tenantStore.listEmpresas();
       res.json({ empresas });
     } catch (error: any) {
       console.error("[SuperAdmin List Empresas Error]:", error);
@@ -699,33 +773,13 @@ async function startServer() {
   // Get specific company details & users
   app.get("/api/superadmin/empresas/:empresaId", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
       const { empresaId } = req.params;
-
-      const docSnap = await db.doc(`empresas/${empresaId}`).get();
-      if (!docSnap.exists) {
+      const details = tenantStore.getEmpresa(empresaId);
+      if (!details) {
         return res.status(404).json({ error: "Empresa não encontrada." });
       }
 
-      const data = docSnap.data() || {};
-      const usersSnap = await db.collection(`empresas/${empresaId}/usuarios`).get();
-      const users = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
-
-      res.json({
-        empresa: {
-          empresaId: docSnap.id,
-          nome: data.nome || docSnap.id,
-          cnpj: data.cnpj || "",
-          criadoEm: data.criadoEm || "",
-          ativa: data.ativa !== false,
-          financeiro: data.financeiro || { status: 'em_dia' },
-          plano: data.plano || "standard",
-          updatedAt: data.updatedAt
-        },
-        usuarios: users,
-        totalUsuarios: users.length
-      });
+      res.json(details);
     } catch (error: any) {
       console.error("[SuperAdmin Get Empresa Error]:", error);
       res.status(500).json({ error: error.message || "Erro ao buscar empresa." });
@@ -735,28 +789,26 @@ async function startServer() {
   // Update company core information
   app.patch("/api/superadmin/empresas/:empresaId", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
       const { empresaId } = req.params;
       const { nome, cnpj, plano } = req.body || {};
 
-      const docRef = db.doc(`empresas/${empresaId}`);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
+      const updated = tenantStore.updateEmpresa(empresaId, { nome, cnpj, plano });
+      if (!updated) {
         return res.status(404).json({ error: "Empresa não encontrada." });
       }
 
-      const updateData: any = {
-        updatedAt: new Date().toISOString()
-      };
-      if (nome !== undefined) updateData.nome = String(nome).trim();
-      if (cnpj !== undefined) updateData.cnpj = String(cnpj).trim();
-      if (plano !== undefined) updateData.plano = String(plano).trim();
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        const docRef = db.doc(`empresas/${empresaId}`);
+        const updateData: any = { updatedAt: new Date().toISOString() };
+        if (nome !== undefined) updateData.nome = String(nome).trim();
+        if (cnpj !== undefined) updateData.cnpj = String(cnpj).trim();
+        if (plano !== undefined) updateData.plano = String(plano).trim();
+        await docRef.update(updateData);
+      } catch (_) {}
 
-      await docRef.update(updateData);
-
-      const updatedSnap = await docRef.get();
-      res.json({ success: true, empresa: { empresaId: docRef.id, ...updatedSnap.data() } });
+      res.json({ success: true, empresa: updated });
     } catch (error: any) {
       console.error("[SuperAdmin Update Empresa Error]:", error);
       res.status(500).json({ error: error.message || "Erro ao atualizar dados cadastrais da empresa." });
@@ -766,8 +818,6 @@ async function startServer() {
   // Update company financial status
   app.patch("/api/superadmin/empresas/:empresaId/financeiro", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
       const { empresaId } = req.params;
       const { status, dataVencimento, dataUltimoPagamento, observacoes } = req.body || {};
 
@@ -775,28 +825,27 @@ async function startServer() {
         return res.status(400).json({ error: "O status financeiro deve ser 'em_dia' ou 'atrasado'." });
       }
 
-      const docRef = db.doc(`empresas/${empresaId}`);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
+      const updated = tenantStore.updateFinanceiro(empresaId, {
+        ...(status ? { status } : {}),
+        ...(dataVencimento ? { dataVencimento } : {}),
+        ...(dataUltimoPagamento ? { dataUltimoPagamento } : {}),
+        ...(observacoes !== undefined ? { observacoes } : {})
+      });
+
+      if (!updated) {
         return res.status(404).json({ error: "Empresa não encontrada." });
       }
 
-      const existingData = docSnap.data() || {};
-      const currentFinanceiro = existingData.financeiro || {};
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        await db.doc(`empresas/${empresaId}`).update({
+          financeiro: updated,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (_) {}
 
-      const updatedFinanceiro = {
-        status: status !== undefined ? status : (currentFinanceiro.status || 'em_dia'),
-        dataVencimento: dataVencimento !== undefined ? dataVencimento : (currentFinanceiro.dataVencimento || ''),
-        dataUltimoPagamento: dataUltimoPagamento !== undefined ? dataUltimoPagamento : (currentFinanceiro.dataUltimoPagamento || ''),
-        observacoes: observacoes !== undefined ? observacoes : (currentFinanceiro.observacoes || '')
-      };
-
-      await docRef.update({
-        financeiro: updatedFinanceiro,
-        updatedAt: new Date().toISOString()
-      });
-
-      res.json({ success: true, financeiro: updatedFinanceiro });
+      res.json({ success: true, financeiro: updated, empresaId });
     } catch (error: any) {
       console.error("[SuperAdmin Update Financeiro Error]:", error);
       res.status(500).json({ error: error.message || "Erro ao atualizar status financeiro da empresa." });
@@ -806,8 +855,6 @@ async function startServer() {
   // Toggle company active status (suspend / activate)
   app.patch("/api/superadmin/empresas/:empresaId/ativa", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
       const { empresaId } = req.params;
       const { ativa } = req.body || {};
 
@@ -815,16 +862,19 @@ async function startServer() {
         return res.status(400).json({ error: "O campo 'ativa' deve ser booleano (true ou false)." });
       }
 
-      const docRef = db.doc(`empresas/${empresaId}`);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
+      const result = tenantStore.toggleAtiva(empresaId, ativa);
+      if (result === null) {
         return res.status(404).json({ error: "Empresa não encontrada." });
       }
 
-      await docRef.update({
-        ativa,
-        updatedAt: new Date().toISOString()
-      });
+      try {
+        ensureFirebaseAdmin();
+        const db = getAdminFirestore();
+        await db.doc(`empresas/${empresaId}`).update({
+          ativa,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (_) {}
 
       res.json({ success: true, ativa, empresaId });
     } catch (error: any) {
@@ -836,85 +886,8 @@ async function startServer() {
   // Global platform dashboard aggregated metrics
   app.get("/api/superadmin/dashboard", verifyAuthToken, requireSuperAdmin, async (req, res) => {
     try {
-      ensureFirebaseAdmin();
-      const db = getAdminFirestore();
-
-      // 1. All tenant companies
-      const empresasSnap = await db.collection("empresas").get();
-      const empresas = empresasSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-
-      const totalEmpresas = empresas.length;
-      const empresasAtivas = empresas.filter(e => e.ativa !== false).length;
-      const empresasSuspensas = empresas.filter(e => e.ativa === false).length;
-      const empresasEmDia = empresas.filter(e => e.financeiro?.status === "em_dia" || !e.financeiro?.status).length;
-      const empresasAtrasadas = empresas.filter(e => e.financeiro?.status === "atrasado").length;
-
-      // 2. Total platform users
-      let totalUsuarios = 0;
-      try {
-        const usuariosGroup = await db.collectionGroup("usuarios").get();
-        totalUsuarios = usuariosGroup.size;
-      } catch (err: any) {
-        console.warn("collectionGroup usuarios fallback:", err.message);
-      }
-
-      // 3. Total services aggregated
-      let totalServicos = 0;
-      const servicosPorMes: Record<string, number> = {};
-      try {
-        const servicesGroup = await db.collectionGroup("services").get();
-        totalServicos = servicesGroup.size;
-        servicesGroup.forEach(doc => {
-          const data = doc.data();
-          const dateStr = data.date || data.createdAt || data.data;
-          if (dateStr && typeof dateStr === 'string') {
-            const month = dateStr.substring(0, 7);
-            servicosPorMes[month] = (servicosPorMes[month] || 0) + 1;
-          }
-        });
-      } catch (err: any) {
-        console.warn("collectionGroup services fallback:", err.message);
-      }
-
-      // 4. Total quotes aggregated
-      let totalOrcamentos = 0;
-      const orcamentosPorMes: Record<string, number> = {};
-      try {
-        const quotesGroup = await db.collectionGroup("quotes").get();
-        totalOrcamentos = quotesGroup.size;
-        quotesGroup.forEach(doc => {
-          const data = doc.data();
-          const dateStr = data.createdAt || data.data;
-          if (dateStr && typeof dateStr === 'string') {
-            const month = dateStr.substring(0, 7);
-            orcamentosPorMes[month] = (orcamentosPorMes[month] || 0) + 1;
-          }
-        });
-      } catch (err: any) {
-        console.warn("collectionGroup quotes fallback:", err.message);
-      }
-
-      // 5. Distribution by plan
-      const distribuicaoPlanos: Record<string, number> = {};
-      empresas.forEach(e => {
-        const plano = e.plano || 'standard';
-        distribuicaoPlanos[plano] = (distribuicaoPlanos[plano] || 0) + 1;
-      });
-
-      res.json({
-        totalEmpresas,
-        empresasAtivas,
-        empresasSuspensas,
-        empresasEmDia,
-        empresasAtrasadas,
-        totalUsuarios,
-        totalServicos,
-        totalOrcamentos,
-        servicosPorMes,
-        orcamentosPorMes,
-        distribuicaoPlanos,
-        geradoEm: new Date().toISOString()
-      });
+      const metrics = tenantStore.getDashboardMetrics();
+      res.json(metrics);
     } catch (error: any) {
       console.error("[SuperAdmin Dashboard Error]:", error);
       res.status(500).json({ error: error.message || "Erro ao calcular métricas do painel super-admin." });

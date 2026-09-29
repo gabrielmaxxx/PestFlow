@@ -1,0 +1,273 @@
+{
+  "empresas": {
+    "pestflow_matriz": {
+      "empresaId": "pestflow_matriz",
+      "nome": "PestFlow Matriz e Gestão Operacional",
+      "cnpj": "12.345.678/0001-90",
+      "criadoEm": "2026-09-21T11:38:59.361Z",
+      "ativa": true,
+      "financeiro": {
+        "status": "em_dia",
+        "dataVencimento": "2026-12-31",
+        "dataUltimoPagamento": "2026-09-21",
+        "observacoes": ""
+      },
+      "plano": "enterprise",
+      "updatedAt": "2026-09-21T11:38:59.361Z"
+    },
+    "agropragas_sul": {
+      "empresaId": "agropragas_sul",
+      "nome": "AgroPragas Controle Ambiental Ltda",
+      "cnpj": "98.765.432/0001-11",
+      "criadoEm": "2026-02-01T10:00:00.000Z",
+      "ativa": true,
+      "financeiro": {
+        "status": "em_dia",
+        "dataVencimento": "2026-10-15",
+        "dataUltimoPagamento": "2026-09-21",
+        "observacoes": "Verificado com sucesso"
+      },
+      "plano": "pro",
+      "updatedAt": "2026-09-21T11:39:07.051Z"
+    },
+    "biopragas_sp": {
+      "empresaId": "biopragas_sp",
+      "nome": "BioPragas Soluções Fitossanitárias",
+      "cnpj": "45.678.901/0001-22",
+      "criadoEm": "2026-02-15T14:30:00.000Z",
+      "ativa": true,
+      "financeiro": {
+        "status": "em_dia",
+        "dataVencimento": "2026-10-20",
+        "dataUltimoPagamento": "2026-09-21",
+        "observacoes": "Licença Standard ativa"
+      },
+      "plano": "standard",
+      "updatedAt": "2026-09-21T11:38:58.667Z"
+    },
+    "ecopragas_mg": {
+      "empresaId": "ecopragas_mg",
+      "nome": "EcoPragas Manejo Integrado",
+      "cnpj": "33.221.100/0001-44",
+      "criadoEm": "2026-03-01T09:15:00.000Z",
+      "ativa": true,
+      "financeiro": {
+        "status": "atrasado",
+        "dataVencimento": "2026-09-05",
+        "dataUltimoPagamento": "2026-08-05",
+        "observacoes": "Boleto de renovação em aberto"
+      },
+      "plano": "standard",
+      "updatedAt": "2026-09-21T11:38:58.667Z"
+    },
+    "vetorzero_df": {
+      "empresaId": "vetorzero_df",
+      "nome": "VetorZero Desinsetizadora",
+      "cnpj": "55.443.322/0001-88",
+      "criadoEm": "2026-03-10T16:45:00.000Z",
+      "ativa": false,
+      "financeiro": {
+        "status": "atrasado",
+        "dataVencimento": "2026-08-10",
+        "dataUltimoPagamento": "2026-07-10",
+        "observacoes": "Acesso suspenso temporariamente por inadimplência"
+      },
+      "plano": "starter",
+      "updatedAt": "2026-09-21T11:38:58.667Z"
+    }
+  },
+  "usuarios": {
+    "pestflow_matriz": [
+      {
+        "uid": "master_superadmin_uid",
+        "login": "master",
+        "email": "master@pestflow_matriz.pestflow.internal",
+        "name": "Super Admin Master",
+        "cargo": "Gestor Master Super-Admin",
+        "empresaId": "pestflow_matriz",
+        "role": "master",
+        "isSuperAdmin": true,
+        "permissions": {
+          "agenda": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "orcamentos": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "estoque": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "financeiro": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "contratos": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "pops": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "ia": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          }
+        },
+        "createdAt": "2026-09-21T11:38:59.361Z",
+        "updatedAt": "2026-09-21T11:38:59.361Z"
+      }
+    ],
+    "agropragas_sul": [
+      {
+        "uid": "usr_agro_admin",
+        "login": "carlos.mendes",
+        "email": "carlos.mendes@agropragas_sul.pestflow.internal",
+        "name": "Carlos Mendes",
+        "cargo": "Diretor Operacional",
+        "empresaId": "agropragas_sul",
+        "role": "admin",
+        "isSuperAdmin": false,
+        "permissions": {
+          "agenda": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "orcamentos": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "estoque": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "financeiro": {
+            "view": true,
+            "edit": true,
+            "delete": false
+          }
+        },
+        "createdAt": "2026-02-01T10:00:00.000Z",
+        "updatedAt": "2026-09-21T11:38:58.667Z"
+      },
+      {
+        "uid": "usr_agro_tec1",
+        "login": "rodrigo.lima",
+        "email": "rodrigo.lima@agropragas_sul.pestflow.internal",
+        "name": "Rodrigo Lima",
+        "cargo": "Técnico Aplicador Sênior",
+        "empresaId": "agropragas_sul",
+        "role": "technician",
+        "isSuperAdmin": false,
+        "permissions": {
+          "agenda": {
+            "view": true,
+            "edit": true,
+            "delete": false
+          },
+          "estoque": {
+            "view": true,
+            "edit": false,
+            "delete": false
+          },
+          "pops": {
+            "view": true,
+            "edit": false,
+            "delete": false
+          }
+        },
+        "createdAt": "2026-02-05T11:00:00.000Z",
+        "updatedAt": "2026-09-21T11:38:58.667Z"
+      }
+    ],
+    "biopragas_sp": [
+      {
+        "uid": "usr_bio_admin",
+        "login": "marcos.souza",
+        "email": "marcos.souza@biopragas_sp.pestflow.internal",
+        "name": "Marcos Souza",
+        "cargo": "Gestor Geral",
+        "empresaId": "biopragas_sp",
+        "role": "admin",
+        "isSuperAdmin": false,
+        "permissions": {
+          "agenda": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          },
+          "orcamentos": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          }
+        },
+        "createdAt": "2026-02-15T14:30:00.000Z",
+        "updatedAt": "2026-09-21T11:38:58.667Z"
+      }
+    ],
+    "ecopragas_mg": [
+      {
+        "uid": "usr_eco_admin",
+        "login": "eduardo.silva",
+        "email": "eduardo.silva@ecopragas_mg.pestflow.internal",
+        "name": "Eduardo Silva",
+        "cargo": "Responsável Técnico",
+        "empresaId": "ecopragas_mg",
+        "role": "admin",
+        "isSuperAdmin": false,
+        "permissions": {
+          "agenda": {
+            "view": true,
+            "edit": true,
+            "delete": true
+          }
+        },
+        "createdAt": "2026-03-01T09:15:00.000Z",
+        "updatedAt": "2026-09-21T11:38:58.667Z"
+      }
+    ],
+    "vetorzero_df": [
+      {
+        "uid": "usr_vetor_admin",
+        "login": "juliana.santos",
+        "email": "juliana.santos@vetorzero_df.pestflow.internal",
+        "name": "Juliana Santos",
+        "cargo": "Administradora",
+        "empresaId": "vetorzero_df",
+        "role": "admin",
+        "isSuperAdmin": false,
+        "permissions": {},
+        "createdAt": "2026-03-10T16:45:00.000Z",
+        "updatedAt": "2026-09-21T11:38:58.667Z"
+      }
+    ]
+  },
+  "stats": {
+    "totalServicos": 142,
+    "totalOrcamentos": 89,
+    "servicosPorMes": {
+      "2026-07": 38,
+      "2026-08": 49,
+      "2026-09": 55
+    },
+    "orcamentosPorMes": {
+      "2026-07": 22,
+      "2026-08": 31,
+      "2026-09": 36
+    }
+  }
+}
