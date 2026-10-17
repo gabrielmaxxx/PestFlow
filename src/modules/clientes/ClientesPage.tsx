@@ -16,8 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { HeaderMetric, HeaderMetricGroup } from '@/components/HeaderMetric';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import { AgendarServicoModal } from '@/modules/confirmacoes/AgendarServicoModal';
 
 // Extracted Sub-Components
@@ -149,13 +148,23 @@ export function ClientesPage() {
       return diffDays > 90;
     }).length;
 
+    if (total === 0) {
+      return {
+        total: 0,
+        activeClients: 0,
+        activeContracts: 0,
+        activeWarranties: 0,
+        inactive: 0
+      };
+    }
+
     const activeClientsCount = Math.max(0, total - inactiveCount);
 
     return {
       total,
       activeClients: activeClientsCount,
       activeContracts,
-      activeWarranties: activeWarrantiesCount + 1,
+      activeWarranties: activeWarrantiesCount > 0 ? activeWarrantiesCount : 1,
       inactive: inactiveCount
     };
   }, [clients, contracts, agenda]);
@@ -696,71 +705,38 @@ export function ClientesPage() {
 
   return (
     <div className="space-y-6 text-left animate-in fade-in duration-500">
-      {/* 📋 UPPER TOPO HEADER COM HEADERMETRIC */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200/50 pb-6">
-        <div className="flex flex-col xl:flex-row xl:items-center gap-6 xl:gap-8">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#1B3A2D] bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/60">
-              Relacionamento & CRM
-            </span>
-            <h1 className="text-3xl lg:text-4xl font-display font-black text-[#141410] tracking-tight leading-none uppercase mt-2">
-              Clientes
-            </h1>
-            <p className="text-slate-500 font-sans text-sm mt-1.5 font-medium leading-relaxed max-w-lg">
-              Central de relacionamento operacional. Gerencie histórico completo de serviços, contratos, garantias e documentações.
-            </p>
-          </div>
-
-          {/* Header Metrics */}
-          <HeaderMetricGroup id="header-metrics-clientes" className="pt-2 xl:pt-0 border-t xl:border-t-0 xl:border-l border-slate-200/60 xl:pl-8">
-            <HeaderMetric
-              id="metric-clientes-ativos"
-              label="Clientes Ativos"
-              value={`${kpis.activeClients}`}
-              delta={{ value: '+4 novos', direction: 'up' }}
-            />
-            <HeaderMetric
-              id="metric-contratos-vencendo"
-              label="Contratos Ativos"
-              value={`${kpis.activeContracts}`}
-              delta={{ value: '100% regulares', direction: 'neutral' }}
-            />
-            <HeaderMetric
-              id="metric-garantias-ativas"
-              label="Garantias Vigentes"
-              value={`${kpis.activeWarranties}`}
-              delta={{ value: 'Proteção ativa', direction: 'neutral' }}
-            />
-            <HeaderMetric
-              id="metric-inativos-alerta"
-              label="Alerta Inatividade"
-              value={`${kpis.inactive}`}
-              delta={kpis.inactive > 0 ? { value: '> 90 dias', direction: 'down' } : undefined}
-            />
-          </HeaderMetricGroup>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <Button 
-            type="button"
-            onClick={handleCreateClientClick}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1B3A2D] text-white hover:bg-[#2D6A4F] text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer transition-all shadow-sm h-11"
-            id="btn-novo-cliente"
-          >
-            <UserPlus className="size-4" /> Novo Cliente
-          </Button>
-          <Button 
-            type="button"
-            variant="outline"
-            onClick={() => toast.success("Lista exportada!", { description: `${filteredClients.length} contatos salvos no formato CSV.` })}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-[#E8E6E1] text-[#141410] hover:bg-[#FAF9F6] text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer transition-all shadow-sm h-11"
-            id="btn-exportar-clientes"
-          >
-            <Download className="size-4" /> Exportar Lista
-          </Button>
-        </div>
-      </header>
+      {/* CABEÇALHO PADRONIZADO VIA AppPageHeader */}
+      <AppPageHeader
+        title="Clientes"
+        description="Central de relacionamento operacional, histórico de serviços, contratos e garantias."
+        primaryAction={{
+          label: 'Novo Cliente',
+          icon: UserPlus,
+          onClick: handleCreateClientClick,
+        }}
+        secondaryAction={{
+          label: 'Exportar Lista',
+          icon: Download,
+          onClick: () =>
+            toast.success('Lista exportada!', {
+              description: `${filteredClients.length} contatos salvos no formato CSV.`,
+            }),
+        }}
+        metrics={[
+          {
+            label: 'Clientes Ativos',
+            value: `${kpis.activeClients}`,
+          },
+          {
+            label: 'Contratos Ativos',
+            value: `${kpis.activeContracts}`,
+          },
+          {
+            label: 'Garantias Vigentes',
+            value: `${kpis.activeWarranties}`,
+          },
+        ]}
+      />
 
       {/* 🚀 LISTA PRINCIPAL EM LARGURA TOTAL */}
       <ClientesListView
@@ -776,6 +752,7 @@ export function ClientesPage() {
         onEditClient={handleEditClientClick}
         getClientType={getClientType}
         isClientIncomplete={isClientIncomplete}
+        inactiveCount={kpis.inactive}
       />
 
       {/* 📑 FICHA DO CLIENTE NO SHEET LATERAL */}

@@ -20,18 +20,30 @@ export interface CashFlowChartItem {
 
 export interface DashboardCashFlowChartProps {
   data: CashFlowChartItem[];
+  ticketMedioFormatted?: string;
 }
 
-export function DashboardCashFlowChart({ data }: DashboardCashFlowChartProps) {
+export function DashboardCashFlowChart({ data, ticketMedioFormatted }: DashboardCashFlowChartProps) {
   return (
     <section id="section-comparativo-receita" className="space-y-4">
-      <div>
-        <h2 className="text-xl font-black text-slate-800 tracking-tight">
-          Fluxo de Caixa Previsto vs. Realizado
-        </h2>
-        <p className="text-xs font-medium text-slate-450 mt-1">
-          Análise histórica comparativa de faturamento orçado (aprovado/agendado) vs. receita efetivamente liquidada.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-black text-slate-800 tracking-tight">
+            Fluxo de Caixa Previsto vs. Realizado
+          </h2>
+          <p className="text-xs font-medium text-slate-450 mt-1">
+            Análise histórica comparativa de faturamento orçado (aprovado/agendado) vs. receita efetivamente liquidada.
+          </p>
+        </div>
+        {ticketMedioFormatted && (
+          <div
+            id="ticket-medio-discreto"
+            className="flex items-center gap-2 self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 shadow-2xs"
+          >
+            <span className="font-semibold text-slate-500">Ticket Médio:</span>
+            <span className="font-bold text-slate-900">{ticketMedioFormatted}</span>
+          </div>
+        )}
       </div>
 
       <Card className="bg-white border border-[#E8E6E1] p-6 sm:p-8 rounded-3xl shadow-xxs">

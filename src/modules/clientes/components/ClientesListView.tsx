@@ -22,6 +22,7 @@ interface ClientesListViewProps {
   onEditClient: (client: Client) => void;
   getClientType: (client: Client) => 'B2B' | 'B2C';
   isClientIncomplete: (client: Client) => boolean;
+  inactiveCount?: number;
 }
 
 export function ClientesListView({
@@ -37,6 +38,7 @@ export function ClientesListView({
   onEditClient,
   getClientType,
   isClientIncomplete,
+  inactiveCount,
 }: ClientesListViewProps) {
   return (
     <div className="space-y-4">
@@ -59,7 +61,10 @@ export function ClientesListView({
           {[
             { id: 'all', label: 'Todos' },
             { id: 'ativos', label: 'Ativos' },
-            { id: 'inativos', label: 'Inativos' },
+            { 
+              id: 'inativos', 
+              label: inactiveCount !== undefined ? `Inativos (${inactiveCount})` : 'Inativos' 
+            },
             { id: 'garantias', label: 'Garantias' },
             { id: 'contratos', label: 'Contratos' },
             { id: 'inadimplentes', label: 'Inadimplentes' }

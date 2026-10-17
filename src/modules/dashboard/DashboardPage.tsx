@@ -14,7 +14,7 @@ import {
 import { useSystemStore, selectMargemMesAnterior, selectContratosParaReajuste } from '@/store/systemStore';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { analyticsService } from './services/analyticsService';
-import { HeaderMetric, HeaderMetricGroup } from '@/components/HeaderMetric';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import { formatBRL, formatPercent } from '@/utils/format';
 import {
   DashboardAlertsSection,
@@ -449,56 +449,33 @@ export function DashboardPage() {
     return (
       <div className="space-y-12 animate-in fade-in slide-in-from-bottom-3 duration-300 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6">
         
-        {/* HEADER / TOPO */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2 border-b border-slate-100">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight" id="screen-title">
-              Dashboard
-            </h1>
-            <p className="text-sm font-medium text-slate-500 mt-2">
-              Acompanhe indicadores, alertas e operação em tempo real.
-            </p>
-          </div>
-
-          {/* QUICK BUTTONS */}
-          <div className="flex flex-wrap items-center gap-3" id="quick-action-buttons">
-            <button
-              id="btn-quick-orçamento"
-              onClick={() => navigate('/calculator')}
-              className="inline-flex items-center gap-2 px-4.5 py-2.5 bg-[#1B3A2D] text-white hover:bg-[#1B3A2D]/90 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97 animate-pulse"
-            >
-              <FileText className="size-4 opacity-90" />
-              <span>Novo Orçamento</span>
-            </button>
-            
-            <button
-              id="btn-quick-cliente"
-              onClick={() => navigate('/clientes')}
-              className="inline-flex items-center gap-2 px-4.5 py-2.5 bg-white text-slate-700 hover:text-[#1B3A2D] border border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <Users className="size-4 text-slate-400" />
-              <span>Novo Cliente</span>
-            </button>
-            
-            <button
-              id="btn-quick-servico"
-              onClick={() => navigate('/agenda')}
-              className="inline-flex items-center gap-2 px-4.5 py-2.5 bg-white text-slate-700 hover:text-[#1B3A2D] border border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <Calendar className="size-4 text-slate-400" />
-              <span>Novo Serviço</span>
-            </button>
-            
-            <button
-              id="btn-quick-estoque"
-              onClick={() => navigate('/inventory')}
-              className="inline-flex items-center gap-2 px-4.5 py-2.5 bg-white text-slate-700 hover:text-[#1B3A2D] border border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <Package className="size-4 text-slate-400" />
-              <span>Entrada Estoque</span>
-            </button>
-          </div>
-        </header>
+        {/* HEADER / TOPO VIA AppPageHeader */}
+        <AppPageHeader
+          title="Dashboard"
+          description="Acompanhe indicadores, alertas e operação em tempo real."
+          primaryAction={{
+            label: 'Novo Orçamento',
+            icon: FileText,
+            onClick: () => navigate('/calculator'),
+          }}
+          secondaryAction={{
+            label: 'Novo Cliente',
+            icon: Users,
+            onClick: () => navigate('/clientes'),
+          }}
+          moreActions={[
+            {
+              label: 'Novo Serviço',
+              icon: Calendar,
+              onClick: () => navigate('/agenda'),
+            },
+            {
+              label: 'Entrada de Estoque',
+              icon: Package,
+              onClick: () => navigate('/inventory'),
+            },
+          ]}
+        />
 
         {/* POLISHED EMPTY STATE */}
         <div id="dashboard-empty-state-card" className="flex flex-col items-center justify-center p-12 bg-white border border-[#E8E6E1] rounded-3xl text-center space-y-4 py-24 shadow-xxs">
@@ -527,103 +504,67 @@ export function DashboardPage() {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-3 duration-300 pb-12 w-full max-w-7xl mx-auto px-4 sm:px-6">
       
-      {/* HEADER / TOPO COM KPIs EXECUTIVOS VIA HeaderMetric */}
-      <header className="flex flex-col gap-6 pb-6 border-b border-slate-200/80">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-8">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight" id="screen-title">
-                Dashboard
-              </h1>
-              <p className="text-sm font-medium text-slate-500 mt-1">
-                Acompanhe indicadores, alertas e operação em tempo real.
-              </p>
-            </div>
-
-            {/* 4 KPIs EXECUTIVOS NO CABEÇALHO */}
-            <HeaderMetricGroup
-              id="header-metrics-dashboard"
-              className="pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l border-slate-200 lg:pl-8"
-            >
-              <HeaderMetric
-                id="metric-receita-mes"
-                label="Receita do Mês"
-                value={formatBRL(revenueValue)}
-                delta={{ value: 'Líquido arrecadado', direction: 'up' }}
-              />
-              <HeaderMetric
-                id="metric-margem-media"
-                label="Margem Média"
-                value={formatPercent(avgMarginValue)}
-                delta={{
-                  value: `Meta: ${minMarginTarget.toFixed(1)}%`,
-                  direction: avgMarginValue >= minMarginTarget ? 'up' : 'down',
-                }}
-              />
-              <HeaderMetric
-                id="metric-servicos-realizados"
-                label="Serviços Realizados"
-                value={String(serviceCountValue)}
-                delta={{
-                  value: `Meta: ${serviceTarget}`,
-                  direction: serviceCountValue >= serviceTarget ? 'up' : 'neutral',
-                }}
-              />
-              <HeaderMetric
-                id="metric-ticket-medio"
-                label="Ticket Médio"
-                value={formatBRL(avgTicketValue)}
-                delta={{ value: 'Média por OS', direction: 'neutral' }}
-              />
-            </HeaderMetricGroup>
-          </div>
-
-          {/* QUICK BUTTONS */}
-          <div className="flex flex-wrap items-center gap-2.5 self-start xl:self-auto shrink-0" id="quick-action-buttons">
-            <button
-              id="btn-quick-orçamento"
-              onClick={() => navigate('/calculator')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1B3A2D] text-white hover:bg-[#1B3A2D]/90 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <FileText className="size-4 opacity-90" />
-              <span>Novo Orçamento</span>
-            </button>
-            
-            <button
-              id="btn-quick-cliente"
-              onClick={() => navigate('/clientes')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 hover:text-[#1B3A2D] border border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <Users className="size-4 text-slate-400" />
-              <span>Novo Cliente</span>
-            </button>
-            
-            <button
-              id="btn-quick-servico"
-              onClick={() => navigate('/agenda')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 hover:text-[#1B3A2D] border border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <Calendar className="size-4 text-slate-400" />
-              <span>Novo Serviço</span>
-            </button>
-            
-            <button
-              id="btn-quick-estoque"
-              onClick={() => navigate('/inventory')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 hover:text-[#1B3A2D] border border-slate-200 hover:border-slate-350 hover:bg-slate-50/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-97"
-            >
-              <Package className="size-4 text-slate-400" />
-              <span>Entrada Estoque</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* CABEÇALHO PADRONIZADO VIA AppPageHeader */}
+      <AppPageHeader
+        title="Dashboard"
+        description="Acompanhe indicadores, alertas e operação em tempo real."
+        primaryAction={{
+          label: 'Novo Orçamento',
+          icon: FileText,
+          onClick: () => navigate('/calculator'),
+        }}
+        secondaryAction={{
+          label: 'Novo Cliente',
+          icon: Users,
+          onClick: () => navigate('/clientes'),
+        }}
+        moreActions={[
+          {
+            label: 'Novo Serviço',
+            icon: Calendar,
+            onClick: () => navigate('/agenda'),
+          },
+          {
+            label: 'Entrada de Estoque',
+            icon: Package,
+            onClick: () => navigate('/inventory'),
+          },
+        ]}
+        metrics={[
+          {
+            label: 'Receita do Mês',
+            value: formatBRL(revenueValue),
+          },
+          {
+            label: 'Margem Média',
+            value: formatPercent(avgMarginValue),
+            delta:
+              avgMarginValue > 0 && minMarginTarget > 0
+                ? {
+                    value: `Meta: ${minMarginTarget.toFixed(1)}%`,
+                    direction: avgMarginValue >= minMarginTarget ? 'up' : 'down',
+                  }
+                : undefined,
+          },
+          {
+            label: 'Serviços Realizados',
+            value: String(serviceCountValue),
+            delta:
+              serviceCountValue > 0 && serviceTarget > 0
+                ? {
+                    value: `Meta: ${serviceTarget}`,
+                    direction: serviceCountValue >= serviceTarget ? 'up' : 'neutral',
+                  }
+                : undefined,
+          },
+        ]}
+      />
 
       {/* SEÇÃO 1: ALERTAS OPERACIONAIS (SEMPRE VISÍVEL) */}
       <DashboardAlertsSection alerts={displayAlertsList} onNavigate={navigate} />
 
       {/* SEÇÃO 2: GRÁFICO DE FLUXO DE CAIXA PREVISTO VS REALIZADO (SEMPRE VISÍVEL) */}
-      <DashboardCashFlowChart data={revenueChartData} />
+      <DashboardCashFlowChart data={revenueChartData} ticketMedioFormatted={formatBRL(avgTicketValue)} />
 
       {/* SEÇÃO 3: AGENDA OPERACIONAL (SEMPRE VISÍVEL) */}
       <DashboardAgendaSection

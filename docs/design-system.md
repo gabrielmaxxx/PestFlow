@@ -29,71 +29,102 @@ Os seguintes elementos de interface já foram rigorosamente testados, validados 
 
 ---
 
-## 2. Novo Padrão de Métricas de Cabeçalho (`HeaderMetric`)
+## 2. Padrão Oficial de Cabeçalho de Página (`AppPageHeader`)
 
-O componente `HeaderMetric` (`src/components/HeaderMetric.tsx`) introduz uma forma limpa, direta e visualmente elegante de exibir números e KPIs de alto nível no cabeçalho das páginas, sem poluição visual.
+O cabeçalho de todas as páginas da plataforma deve ser construído **exclusivamente** através do componente unificado `AppPageHeader` (`src/components/AppPageHeader.tsx`). Ele padroniza a exibição de título, status, ações e KPIs executivos, eliminando quebras desordenadas e inconsistências de layout entre telas.
 
-### 2.1 Princípios Visuais
-- **Sem bordas, sem caixas e sem fundos:** A força do componente vem unicamente da clareza tipográfica e do respiro visual (whitespace).
-- **Rótulo Superior:** Pequeno, em cinza neutro (`text-slate-500`), caixa alta (`uppercase`) e rastreamento expandido (`tracking-wider`).
-- **Valor Central:** Número grande e em negrito (`text-2xl md:text-3xl font-bold tracking-tight text-slate-900`), facilitando a leitura imediata (em menos de 1 segundo).
-- **Variação Inferior (Delta Opcional):** Indicador de tendência com ícone direcional e cor semântica (`text-emerald-600` para subida, `text-rose-600` para queda, `text-slate-500` para neutro).
+### 2.1 As 6 Regras Obrigatórias do Cabeçalho
 
-### 2.2 Interface do Componente
+1. **Um Único Componente:** Todas as telas devem usar exclusivamente `<AppPageHeader />`. É terminantemente proibido montar cabeçalhos manualmente com `HeaderMetricGroup`, tags manuais ou breakpoints aninhados ad-hoc.
+2. **Duas Linhas Fixas:** O cabeçalho possui uma divisão visual rigorosa em duas linhas:
+   - **Linha 1:** Layout `flex flex-wrap items-start justify-between gap-4`. Título/descrição à esquerda (`min-w-0`), ações operacionais à direita (`shrink-0`).
+   - **Linha 2 (Apenas se houver métricas):** Grid de colunas iguais (`grid-cols-1 sm:grid-cols-3`, ajustando ao número real de itens) ocupando 100% da largura, com borda superior fina (`border-t border-slate-200/80`) e margem superior consistente (`mt-6 pt-6`). **Métricas nunca devem ficar na mesma linha do título**.
+3. **Máximo de 3 Métricas:** Cada página pode exibir no máximo 3 métricas de alto impacto (`metrics`). Quaisquer itens excedentes são ignorados silenciosamente em produção e geram `console.warn` em ambiente de desenvolvimento.
+4. **1 Primária + 1 Secundária Visíveis (Resto em "Mais Ações"):** No máximo 2 ações ficam diretamente expostas na Linha 1 (`primaryAction` e `secondaryAction`). Ações adicionais devem ser fornecidas em `moreActions` e são agrupadas automaticamente no menu suspenso `"Mais ações"`. Se não houver ações adicionais, o menu é omitido.
+5. **Sem Etiqueta Decorativa, Descrição de Uma Linha:** Não utilize pílulas ou etiquetas decorativas no cabeçalho. Apenas badges de estado operacional real (ex.: `"Online"`, `"Offline"`) são permitidos através de `statusSlot`. A descrição da página deve ter no máximo uma linha (truncada com reticências `...` e atributo `title` nativo).
+6. **Delta Só com Dado Real:** O campo `delta` (indicador percentual/direcional) deve ser preenchido exclusivamente quando houver cálculo histórico real verificado. Se o dado for ausente ou fictício, omita a propriedade `delta`, exibindo apenas o rótulo e o valor da métrica.
+
+---
+
+### 2.2 Interface do Componente (`AppPageHeaderProps`)
+
 ```typescript
-interface HeaderMetricProps {
-  label: string;                                                      // Rótulo descritivo (ex: "Receita Total (Mês)")
-  value: string;                                                      // Valor formatado (ex: "R$ 145.320,00")
+export interface PageHeaderAction {
+  label: string;
+  icon?: React.ComponentType<{ className?: string }> | React.ReactNode;
+  onClick?: (e?: React.MouseEvent<HTMLButtonElement | HTMLDivElement>) => void;
+}
+
+export interface PageHeaderMetric {
+  label: string;                                                      // Rótulo superior em uppercase (ex: "Receita do Mês")
+  value: string;                                                      // Valor numérico em destaque (ex: "R$ 145.320,00")
   delta?: {
-    value: string;                                                    // Ex: "+8,2%" ou "-3,1%"
+    value: string;                                                    // Variação real (ex: "+8,2% vs. mês ant.")
     direction: 'up' | 'down' | 'neutral';                             // Direção da tendência
   };
+}
+
+export interface AppPageHeaderProps {
+  title: string;                                                      // Título principal da página
+  description?: string;                                               // Descrição curta de uma linha (truncada)
+  primaryAction?: PageHeaderAction;                                   // Ação primária destacada (Verde Floresta)
+  secondaryAction?: PageHeaderAction;                                 // Ação secundária (Contorno)
+  moreActions?: PageHeaderAction[];                                   // Ações adicionais agrupadas no menu "Mais ações"
+  metrics?: PageHeaderMetric[];                                       // Lista de 1 a 3 métricas (Linha 2)
+  statusSlot?: React.ReactNode;                                       // Badge de status operacional (ex: Online)
   className?: string;
   id?: string;
 }
 ```
 
-### 2.3 Regra de Uso: Quando Usar vs. Quando Manter Badges
+---
 
-| Cenário | Componente Recomendado | Justificativa |
-| :--- | :--- | :--- |
-| **KPIs Mais Importantes da Página** | `<HeaderMetric />` | Ficam no cabeçalho ao lado do título da tela ou em linha de métricas principais. Máximo de 3 a 4 por tela para não sobrecarregar. |
-| **Status Operacional / Conexão** | `<Badge />` com borda e fundo | Status como "Online", "Em Andamento", "Concluído", "Offline" exigem delimitação em pílula colorida com borda para rápido reconhecimento de estado. |
-| **Contadores Secundários de Itens** | Badge/Chip pequeno | Contadores ao lado de títulos de seção (ex: "12 itens", "3 alertas") ou badges nas abas devem permanecer pequenos e contidos. |
-| **Tags de Classificação e Categoria** | `<Badge variant="outline" />` | Identificadores de clientes, tipos de praga ou setores de atendimento. |
-
-### 2.4 Exemplo de Implementação
+### 2.3 Exemplo Oficial de Implementação
 
 ```tsx
-import { HeaderMetric, HeaderMetricGroup } from "@/components/HeaderMetric";
+import { AppPageHeader } from "@/components/AppPageHeader";
+import { Plus, Download, FileSpreadsheet } from "lucide-react";
 
-export function ExemploCabecalho() {
+export function ExemploPagina() {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-100 pb-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Gestão Financeira</h1>
-        <p className="text-sm text-slate-500">Acompanhamento consolidado de DRE e fluxo de caixa.</p>
-      </div>
-
-      {/* Métricas sem caixa nem borda — puro impacto tipográfico */}
-      <HeaderMetricGroup>
-        <HeaderMetric
-          label="Receita do Mês"
-          value="R$ 145.320,00"
-          delta={{ value: "+8,2% vs. mês ant.", direction: "up" }}
-        />
-        <HeaderMetric
-          label="Margem Operacional"
-          value="26,4%"
-          delta={{ value: "+1,8%", direction: "up" }}
-        />
-        <HeaderMetric
-          label="Ponto de Equilíbrio"
-          value="R$ 58.400,00"
-          delta={{ value: "-4,1%", direction: "down" }}
-        />
-      </HeaderMetricGroup>
-    </div>
+    <AppPageHeader
+      title="Gestão Financeira"
+      description="Acompanhamento consolidado de DRE, fluxo de caixa e ponto de equilíbrio operacional."
+      primaryAction={{
+        label: "Nova Transação",
+        icon: Plus,
+        onClick: () => console.log("Nova Transação"),
+      }}
+      secondaryAction={{
+        label: "Exportar Relatório",
+        icon: Download,
+        onClick: () => console.log("Exportar"),
+      }}
+      moreActions={[
+        {
+          label: "Importar Extrato Bancário",
+          icon: FileSpreadsheet,
+          onClick: () => console.log("Importar"),
+        },
+      ]}
+      metrics={[
+        {
+          label: "Receita do Mês",
+          value: "R$ 145.320,00",
+          delta: { value: "+8,2% vs. mês ant.", direction: "up" },
+        },
+        {
+          label: "Margem Operacional",
+          value: "26,4%",
+          delta: { value: "+1,8%", direction: "up" },
+        },
+        {
+          label: "Ponto de Equilíbrio",
+          value: "R$ 58.400,00",
+          delta: { value: "-4,1%", direction: "down" },
+        },
+      ]}
+    />
   );
 }
 ```
@@ -101,5 +132,7 @@ export function ExemploCabecalho() {
 ---
 
 ## 3. Diretrizes de Governança
-1. **Nenhuma tela deve ser modificada arbitrariamente** sem prévio planejamento da hierarquia das 3-4 métricas selecionadas.
-2. A barra de abas e os componentes de chat devem manter a fidelidade estabelecida sem regressões visuais.
+
+1. **Nenhuma tela deve montar cabeçalho manualmente:** A partir desta padronização, telas que precisarem de ajustes de cabeçalho devem migrar para o componente `<AppPageHeader />`.
+2. **Respeito aos limites:** A Linha 1 comporta no máximo 2 botões visíveis; a Linha 2 comporta no máximo 3 métricas. Não force métricas ou botões extras no layout.
+3. **Consistência Tipográfica:** Cores, tamanhos e espaçamentos são centralizados no componente para garantir conformidade em toda a aplicação.
