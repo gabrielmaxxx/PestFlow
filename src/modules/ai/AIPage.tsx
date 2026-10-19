@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase/config';
 import { useAuth } from '@/auth/hooks/useAuth';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { HeaderMetric, HeaderMetricGroup } from '@/components/HeaderMetric';
+import { AppPageHeader } from '@/components/AppPageHeader';
 
 // Subcomponents & Types
 import {
@@ -923,62 +923,26 @@ Identificamos inconsistências e discrepâncias importantes no balanço operacio
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F7F6F3] text-[#141410] font-sans pb-12">
-      {/* 1. TOP HEADER SECTION */}
-      <header className="bg-white border-b border-[#E8E6E1] shadow-2xs px-6 py-4 shrink-0">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="size-12 rounded-2xl bg-[#1B3A2D] flex items-center justify-center shadow-md shadow-emerald-900/10">
-              <BrainCircuit className="size-6 text-[#D4A017]" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display">
-                Inteligência & IA Operacional
-              </h1>
-              <p className="text-xs text-slate-500 font-normal mt-0.5 font-sans">
-                Consultas analíticas, copiloto executivo, auditor de planilhas e auditoria preditiva.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 flex-wrap md:flex-nowrap">
-            {/* Header Metrics sem borda nem fundo */}
-            <HeaderMetricGroup id="header-metrics-ai" className="gap-5 md:gap-6">
-              <HeaderMetric
-                id="metric-ai-insumos"
-                label="Insumos em Estoque"
-                value={String(inventory.products.length)}
-              />
-              <HeaderMetric
-                id="metric-ai-receita"
-                label="Receita do Mês"
-                value={`R$ ${totalRevenue.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
-              />
-            </HeaderMetricGroup>
-
-            <div className="flex items-center gap-2.5 shrink-0">
-              <div className="flex items-center gap-1.5 text-xs text-[#2D6A4F] font-semibold bg-[#D8EDE3] px-3 py-1.5 rounded-full select-none">
+      {/* 1. TOP HEADER SECTION VIA AppPageHeader */}
+      <div className="bg-white border-b border-[#E8E6E1] shadow-2xs px-6 py-4 shrink-0">
+        <div className="max-w-7xl mx-auto">
+          <AppPageHeader
+            title="Inteligência & IA Operacional"
+            description="Consultas analíticas, copiloto executivo, auditor de planilhas e auditoria preditiva."
+            statusSlot={
+              <div className="flex items-center gap-1.5 text-xs text-[#2D6A4F] font-semibold bg-[#D8EDE3] px-2.5 py-1 rounded-full select-none">
                 <div className="size-1.5 bg-[#2D6A4F] rounded-full animate-pulse" />
                 Online
               </div>
-
-              {/* History & Favorites Trigger Button */}
-              <button
-                type="button"
-                onClick={() => setIsHistoryOpen(true)}
-                className="px-3 py-1.5 bg-[#FAF9F5] border border-slate-200 hover:border-[#1B3A2D]/40 rounded-xl text-xs font-bold text-slate-700 hover:text-[#1B3A2D] flex items-center gap-1.5 transition-all cursor-pointer shadow-3xs"
-              >
-                <History className="size-3.5 text-[#1B3A2D]" />
-                <span className="hidden sm:inline">Histórico & Favoritos</span>
-                {favorites.length > 0 && (
-                  <span className="size-4 rounded-full bg-amber-100 text-amber-900 text-[10px] font-mono font-bold flex items-center justify-center">
-                    {favorites.length}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
+            }
+            secondaryAction={{
+              label: favorites.length > 0 ? `Histórico & Favoritos (${favorites.length})` : 'Histórico & Favoritos',
+              icon: History,
+              onClick: () => setIsHistoryOpen(true),
+            }}
+          />
         </div>
-      </header>
+      </div>
 
       {/* 2. MAIN WORKSPACE WITH 5 FLATTENED TABS */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-6 flex-1">

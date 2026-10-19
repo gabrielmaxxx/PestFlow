@@ -11,12 +11,14 @@ import {
 import { motion } from 'motion/react';
 
 interface MarcarRetornoModalProps {
-  quote: Quote;
+  quote?: Quote | null;
   onConfirm: (cost: number, notes: string) => void;
   onClose: () => void;
 }
 
 export function MarcarRetornoModal({ quote, onConfirm, onClose }: MarcarRetornoModalProps) {
+  if (!quote) return null;
+
   const { settings, financial } = useSystemStore();
 
   const costPerKm = settings?.operationalGoals?.costPerKm ?? 2.5;

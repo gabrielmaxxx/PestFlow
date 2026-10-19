@@ -28,28 +28,38 @@ import { SuperAdminPage } from '@/modules/superadmin/SuperAdminPage';
 import { AuthGuard } from '@/auth/guards/AuthGuard';
 import { SuperAdminGuard } from '@/auth/guards/SuperAdminGuard';
 import { LoginPage } from '@/auth/LoginPage';
+import { PageErrorBoundary } from '@/components/PageErrorBoundary';
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    useSystemStore.getState().checkContractRenewals();
+    try {
+      useSystemStore.getState().checkContractRenewals();
+    } catch (err) {
+      console.warn('[PestFlow] checkContractRenewals incident:', err);
+    }
   }, []);
 
   return (
-    <AuthGuard>
-      <AppShell>
-        <div className="flex-1 w-full bg-transparent overflow-y-auto">
-          {children}
-        </div>
-      </AppShell>
-    </AuthGuard>
+    <PageErrorBoundary pageName="Estrutura do Sistema">
+      <AuthGuard>
+        <AppShell>
+          <div className="flex-1 w-full bg-transparent overflow-y-auto">
+            <PageErrorBoundary>
+              {children}
+            </PageErrorBoundary>
+          </div>
+        </AppShell>
+      </AuthGuard>
+    </PageErrorBoundary>
   );
 }
 
 export default function App() {
   return (
-    <AppProvider>
-      <Router>
-        <Routes>
+    <PageErrorBoundary pageName="PestFlow Platform">
+      <AppProvider>
+        <Router>
+          <Routes>
           <Route path="/login" element={<LoginPage />} />
           
           <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
@@ -70,7 +80,9 @@ export default function App() {
             element={
               <AuthGuard>
                 <SuperAdminGuard>
-                  <SuperAdminPage />
+                  <PageErrorBoundary pageName="Super Admin">
+                    <SuperAdminPage />
+                  </PageErrorBoundary>
                 </SuperAdminGuard>
               </AuthGuard>
             } 
@@ -81,5 +93,6 @@ export default function App() {
       </Router>
       <Toaster position="top-right" duration={4000} />
     </AppProvider>
+    </PageErrorBoundary>
   );
 }

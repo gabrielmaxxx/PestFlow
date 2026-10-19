@@ -186,20 +186,22 @@ function RouteDisplay({ origin, destination }: {
       .catch((err) => {
         console.error('Route compute failed, drawing simple direct line instead:', err);
         // Fallback: simple geodesic line connecting the coordinates directly so it never looks blank
-        const flightPath = new google.maps.Polyline({
-          path: [origin, destination],
-          geodesic: true,
-          strokeColor: '#ef4444',
-          strokeOpacity: 0.6,
-          strokeWeight: 3,
-        });
-        flightPath.setMap(map);
-        polylinesRef.current = [flightPath];
+        if (typeof google !== 'undefined' && google?.maps) {
+          const flightPath = new google.maps.Polyline({
+            path: [origin, destination],
+            geodesic: true,
+            strokeColor: '#ef4444',
+            strokeOpacity: 0.6,
+            strokeWeight: 3,
+          });
+          flightPath.setMap(map);
+          polylinesRef.current = [flightPath];
 
-        const bounds = new google.maps.LatLngBounds();
-        bounds.extend(origin);
-        bounds.extend(destination);
-        map.fitBounds(bounds);
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(origin);
+          bounds.extend(destination);
+          map.fitBounds(bounds);
+        }
       });
 
     return () => {

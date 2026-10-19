@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar, Clock, User, FileText, ChevronRight } from 'lucide-react';
 
 interface AgendarServicoModalProps {
-  quote: Quote;
+  quote?: Quote | null;
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (scheduledDate: string, scheduledTime: string, technician: string, employeeId?: string) => void;
@@ -83,6 +83,10 @@ export function AgendarServicoModal({ quote, isOpen, onClose, onConfirm }: Agend
 
   const isFormValid = scheduledDate !== '' && scheduledTechnician.trim() !== '';
 
+  if (!isOpen || !quote) {
+    return null;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg bg-white rounded-[28px] border border-[#EBEBE5] shadow-2xl p-0 overflow-hidden" showCloseButton={true}>
@@ -94,7 +98,7 @@ export function AgendarServicoModal({ quote, isOpen, onClose, onConfirm }: Agend
             </div>
             <div>
               <DialogTitle className="font-display font-black text-lg text-[#141410] tracking-tight leading-none">
-                Agendar serviço — {quote.client?.name || 'Cliente'}
+                Agendar serviço — {quote?.client?.name || 'Cliente'}
               </DialogTitle>
               <p className="text-xs text-[#706F65] mt-1">Defina as condições de agendamento de OS do orçamento aprovado</p>
             </div>
@@ -110,32 +114,32 @@ export function AgendarServicoModal({ quote, isOpen, onClose, onConfirm }: Agend
               <div className="flex justify-between items-start text-xs border-b border-[#EBEBE5]/60 pb-2">
                 <div>
                   <span className="block text-[8px] font-mono text-slate-400 font-bold uppercase tracking-wider">Cliente</span>
-                  <strong className="text-[#141410] text-sm block mt-0.5">{quote.client?.name || 'Cliente Não Informado'}</strong>
-                  {quote.client?.address && <span className="text-[11px] text-[#706F65] block mt-0.5">{quote.client.address}</span>}
+                  <strong className="text-[#141410] text-sm block mt-0.5">{quote?.client?.name || 'Cliente Não Informado'}</strong>
+                  {quote?.client?.address && <span className="text-[11px] text-[#706F65] block mt-0.5">{quote?.client?.address}</span>}
                 </div>
                 <div className="text-right">
                   <span className="block text-[8px] font-mono text-slate-400 font-bold uppercase tracking-wider">Valor do Orçamento </span>
                   <strong className="text-base font-display font-black text-[#2D6A4F] block mt-0.5">
-                    R$ {(quote.pricing?.finalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    R$ {(quote?.pricing?.finalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </strong>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-[11px] text-[#706F65]">
                 <div>
-                  <strong className="font-semibold text-[#141410]">Tipo de Serviço:</strong> {getServiceTypeText(quote.service?.serviceType)}
+                  <strong className="font-semibold text-[#141410]">Tipo de Serviço:</strong> {getServiceTypeText(quote?.service?.serviceType)}
                 </div>
                 <div>
-                  <strong className="font-semibold text-[#141410]">Praga-Alvo:</strong> {getPestText(quote.service?.pestType)}
+                  <strong className="font-semibold text-[#141410]">Praga-Alvo:</strong> {getPestText(quote?.service?.pestType)}
                 </div>
-                {quote.service?.areaM2 && (
+                {quote?.service?.areaM2 && (
                   <div>
-                    <strong className="font-semibold text-[#141410]">Área Operativa:</strong> {quote.service.areaM2} m²
+                    <strong className="font-semibold text-[#141410]">Área Operativa:</strong> {quote?.service?.areaM2} m²
                   </div>
                 )}
-                {quote.service?.distanceKm && (
+                {quote?.service?.distanceKm && (
                   <div>
-                    <strong className="font-semibold text-[#141410]">Deslocamento:</strong> {quote.service.distanceKm} Km
+                    <strong className="font-semibold text-[#141410]">Deslocamento:</strong> {quote?.service?.distanceKm} Km
                   </div>
                 )}
               </div>

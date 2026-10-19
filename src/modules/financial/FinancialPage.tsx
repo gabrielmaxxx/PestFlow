@@ -67,7 +67,7 @@ import { ServiceDREDetailDialog } from './components/ServiceDREDetailDialog';
 import { ClientBillingDetailDialog } from './components/ClientBillingDetailDialog';
 import { FinancialDetailedAnalysis } from './components/FinancialDetailedAnalysis';
 import { formatBRL, formatPercent, formatDate } from '@/utils/format';
-import { HeaderMetric, HeaderMetricGroup } from '@/components/HeaderMetric';
+import { AppPageHeader } from '@/components/AppPageHeader';
 
 const COLORS = ['#1B3A2D', '#2D6A4F', '#D4A017', '#C1361A', '#7C6F5B', '#A8CDB8', '#3F51B5'];
 const COST_CENTERS = ['Geral', 'Equipe Alfa', 'Equipe Beta', 'Veículo 01', 'Veículo 02'];
@@ -779,97 +779,65 @@ export function FinancialPage() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 text-left relative">
       
-      {/* ----------------------------------------------------
-          TOP HEADER SECTION
-          ---------------------------------------------------- */}
-      <div className="flex flex-col 2xl:flex-row justify-between items-start 2xl:items-center gap-6 border-b border-slate-200/55 pb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-8">
-          <div>
-            <span className="text-[10px] uppercase font-black tracking-widest text-[#2D6A4F] bg-[#EBFDF5] px-3 py-1 rounded-full border border-emerald-100">
-              PestFlow Economic Management Center
-            </span>
-            <h1 className="text-4xl font-extrabold text-slate-900 leading-none tracking-tight mt-3">Financeiro</h1>
-            <p className="text-slate-500 font-normal mt-2 text-sm max-w-md leading-relaxed">
-              Acompanhe receitas, despesas, fluxo de caixa e rentabilidade. Realize a conciliação analítica instantânea do livro fiscal.
-            </p>
-          </div>
-
-          {/* Header Metrics ao lado do título */}
-          <HeaderMetricGroup id="header-metrics-financial" className="pt-2 lg:pt-0 border-t lg:border-t-0 lg:border-l border-slate-200/60 lg:pl-8">
-            <HeaderMetric
-              id="metric-receita-total"
-              label="Receita Total (Mês)"
-              value={`R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              delta={{ value: '+12,4%', direction: 'up' }}
-            />
-            <HeaderMetric
-              id="metric-custo-total"
-              label="Custo Total"
-              value={`R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              delta={{ value: '-3,2%', direction: 'down' }}
-            />
-            <HeaderMetric
-              id="metric-lucro-liquido"
-              label="Lucro Líquido"
-              value={`R$ ${netProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              delta={{ value: netProfit >= 0 ? '+8,1%' : '-8,1%', direction: netProfit >= 0 ? 'up' : 'down' }}
-            />
-            <HeaderMetric
-              id="metric-margem-liquida"
-              label="Margem Líquida"
-              value={`${operationalMargin.toFixed(2)}%`}
-              delta={{ value: operationalMargin >= 0 ? '+2,5%' : '-2,5%', direction: operationalMargin >= 0 ? 'up' : 'down' }}
-            />
-          </HeaderMetricGroup>
-        </div>
-
-        {/* Executive Quick Actions */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full 2xl:w-auto shrink-0">
-          <Button
-            onClick={() => { setNewTxType('RECEITAS'); setIsNewTxOpen(true); }}
-            className="flex-1 sm:flex-initial bg-[#1B3A2D] hover:bg-[#2D6A4F] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 h-11 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            id="btn-nov-receita"
-          >
-            <Plus className="size-4" />
-            Nova Receita
-          </Button>
-
-          <Button
-            onClick={() => { setNewTxType('DESPESAS'); setIsNewTxOpen(true); }}
-            className="flex-1 sm:flex-initial bg-[#C1361A] hover:bg-[#E04B2F] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 h-11 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            id="btn-nov-despesa"
-          >
-            <Plus className="size-4" />
-            Nova Despesa
-          </Button>
-
-          <Button
-            onClick={() => { setActiveTab('planilha'); }}
-            className="flex-1 sm:flex-initial bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-bold uppercase tracking-wider px-5 py-3 h-11 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            id="btn-import-sheet"
-          >
-            <FileSpreadsheet className="size-4 text-emerald-700" />
-            Importar Planilha
-          </Button>
-
-          <Button
-            onClick={handleExportCSVReport}
-            className="flex-1 sm:flex-initial bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-bold uppercase tracking-wider px-5 py-3 h-11 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            id="btn-export-report"
-          >
-            <Download className="size-4 text-slate-600" />
-            Exportar Relatório
-          </Button>
-          
-          <Button
-            onClick={handleResetForDemo}
-            title="Zerar dados"
-            className="size-11 shrink-0 bg-rose-50 hover:bg-rose-100 border border-rose-150 text-xs text-red-600 rounded-xl flex items-center justify-center transition-all cursor-pointer"
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      </div>
+      {/* CABEÇALHO PADRONIZADO VIA AppPageHeader */}
+      <AppPageHeader
+        title="Financeiro"
+        description="Acompanhe receitas, despesas, fluxo de caixa e rentabilidade com conciliação analítica."
+        primaryAction={{
+          label: 'Nova Receita',
+          icon: Plus,
+          onClick: () => {
+            setNewTxType('RECEITAS');
+            setIsNewTxOpen(true);
+          },
+        }}
+        secondaryAction={{
+          label: 'Nova Despesa',
+          icon: Plus,
+          onClick: () => {
+            setNewTxType('DESPESAS');
+            setIsNewTxOpen(true);
+          },
+        }}
+        moreActions={[
+          {
+            label: 'Importar Planilha',
+            icon: FileSpreadsheet,
+            onClick: () => setActiveTab('planilha'),
+          },
+          {
+            label: 'Exportar Relatório',
+            icon: Download,
+            onClick: handleExportCSVReport,
+          },
+          {
+            label: 'Zerar Dados',
+            icon: Trash2,
+            onClick: handleResetForDemo,
+          },
+        ]}
+        metrics={[
+          {
+            label: 'Receita Total',
+            value: `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          },
+          {
+            label: 'Lucro Líquido',
+            value: `R$ ${netProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          },
+          {
+            label: 'Margem Líquida',
+            value: `${operationalMargin.toFixed(2)}%`,
+            delta:
+              totalRevenue > 0 && operationalMargin > 0
+                ? {
+                    value: 'Meta: 35,0%',
+                    direction: operationalMargin >= 35 ? 'up' : 'down',
+                  }
+                : undefined,
+          },
+        ]}
+      />
 
       {/* Primary Navigation Shell */}
       <Tabs
@@ -990,10 +958,10 @@ export function FinancialPage() {
                 </div>
               </Card>
 
-              {/* Card 2: Despesas do Mês */}
+              {/* Card 2: Custo Total (Despesas) */}
               <Card className="bg-white border border-slate-200 p-5 rounded-2xl text-left flex flex-col justify-between shadow-xs">
                 <div className="space-y-1">
-                  <span className="text-[9.5px] font-extrabold uppercase text-slate-500 tracking-wider">Despesas do Mês</span>
+                  <span className="text-[9.5px] font-extrabold uppercase text-slate-500 tracking-wider">Custo Total (Despesas)</span>
                   <h4 className="text-xl font-black text-slate-900 font-mono">
                     R$ {totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </h4>
@@ -1238,7 +1206,7 @@ export function FinancialPage() {
                           {filteredReceitas.map((rec) => (
                             <tr key={rec.id} className="hover:bg-slate-50/30 transition-all">
                               <td className="py-3 px-3 font-mono font-medium text-slate-500 whitespace-nowrap">
-                                {rec.date.split('-').reverse().join('/')}
+                                {rec.date ? rec.date.split('-').reverse().join('/') : '—'}
                               </td>
                               <td className="py-3 px-3 font-semibold text-slate-800 max-w-[140px] truncate" title={rec.description}>
                                 {rec.description}
@@ -1325,7 +1293,7 @@ export function FinancialPage() {
                           {filteredDespesas.map((des) => (
                             <tr key={des.id} className="hover:bg-slate-50/30 transition-all">
                               <td className="py-3 px-3 font-mono text-slate-500 whitespace-nowrap">
-                                {des.date.split('-').reverse().join('/')}
+                                {des.date ? des.date.split('-').reverse().join('/') : '—'}
                               </td>
                               <td className="py-3 px-3 space-y-0.5">
                                 <p className="font-semibold text-slate-800">{des.description}</p>

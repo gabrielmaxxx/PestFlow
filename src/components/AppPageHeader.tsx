@@ -93,7 +93,7 @@ export function AppPageHeader({
           <div className="flex items-center gap-3 flex-wrap">
             <h1
               data-slot="page-header-title"
-              className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight"
+              className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight"
             >
               {title}
             </h1>
@@ -108,7 +108,7 @@ export function AppPageHeader({
             <p
               data-slot="page-header-description"
               title={description}
-              className="text-sm font-medium text-slate-500 mt-1 truncate max-w-full block"
+              className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1 truncate max-w-full block"
             >
               {description}
             </p>
@@ -185,7 +185,7 @@ export function AppPageHeader({
         <div
           data-slot="page-header-line-2"
           className={cn(
-            'mt-6 pt-6 border-t border-slate-200/80 w-full grid gap-6',
+            'mt-6 pt-6 border-t border-slate-200/80 dark:border-slate-800 w-full grid gap-6',
             gridColsClass
           )}
         >

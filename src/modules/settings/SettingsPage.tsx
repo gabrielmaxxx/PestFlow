@@ -156,7 +156,7 @@ export function SettingsPage() {
     setTimeout(() => {
       try {
         // Sync with useSystemStore
-        const parts = settings.cityState.split('/');
+        const parts = (settings.cityState || '').split('/');
         const city = parts[0]?.trim() || '';
         const stateArg = parts[1]?.trim() || '';
 

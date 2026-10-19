@@ -142,12 +142,18 @@ export function FinancialDashboardsTab() {
   ];
 
   // If user has actual logged database movements of positive/negative, let's replace/adjust nicely.
-  const mayMovements = activeMovements.filter(m => m.date.includes('-05-'));
+  const mayMovements = activeMovements.filter(m => typeof m.date === 'string' && m.date.includes('-05-'));
   if (mayMovements.length > 5) {
-    const w1 = mayMovements.filter(m => parseInt(m.date.split('-')[2]) <= 7);
-    const w2 = mayMovements.filter(m => parseInt(m.date.split('-')[2]) > 7 && parseInt(m.date.split('-')[2]) <= 14);
-    const w3 = mayMovements.filter(m => parseInt(m.date.split('-')[2]) > 14 && parseInt(m.date.split('-')[2]) <= 21);
-    const w4 = mayMovements.filter(m => parseInt(m.date.split('-')[2]) > 21);
+    const w1 = mayMovements.filter(m => parseInt(m.date.split('-')[2] || '0', 10) <= 7);
+    const w2 = mayMovements.filter(m => {
+      const day = parseInt(m.date.split('-')[2] || '0', 10);
+      return day > 7 && day <= 14;
+    });
+    const w3 = mayMovements.filter(m => {
+      const day = parseInt(m.date.split('-')[2] || '0', 10);
+      return day > 14 && day <= 21;
+    });
+    const w4 = mayMovements.filter(m => parseInt(m.date.split('-')[2] || '0', 10) > 21);
 
     const getMetrics = (list: typeof movements) => {
       const rec = list.filter(m => m.value > 0).reduce((acc, c) => acc + c.value, 0);

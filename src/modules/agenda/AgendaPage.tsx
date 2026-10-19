@@ -583,7 +583,7 @@ export function AgendaPage() {
                         // Find events running during this hour of this day
                         const cellEvents = eventsInWeek.filter(ev => {
                           const evYmd = ev.dateStr;
-                          const evHour = ev.time.split(':')[0];
+                          const evHour = (ev.time || '08:00').split(':')[0];
                           return evYmd === dateStr && evHour === hourHour;
                         });
 

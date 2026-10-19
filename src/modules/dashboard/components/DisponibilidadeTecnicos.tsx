@@ -360,7 +360,7 @@ export function DisponibilidadeTecnicos() {
                     {/* Tech details */}
                     <div className="col-span-3 pl-6 flex items-center gap-3.5">
                       <div className={`size-9 rounded-xl ${tech.color} text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs shrink-0`}>
-                        {tech.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                        {(tech.name || 'Técnico').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('')}
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-xs font-extrabold text-slate-900 leading-none truncate pr-2" title={tech.name}>

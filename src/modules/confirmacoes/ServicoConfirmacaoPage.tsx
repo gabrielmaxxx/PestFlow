@@ -144,17 +144,20 @@ export function ServicoConfirmacaoPage() {
     employeeId?: string
   ) => {
     if (!quoteToSchedule) return;
-    scheduleApprovedQuote(quoteToSchedule.id, scheduledDate, scheduledTime, technician, employeeId);
-    updateQuoteStatus(quoteToSchedule.id, 'aprovado');
+    const clientName = quoteToSchedule.client?.name || 'Cliente';
+    const quoteId = quoteToSchedule.id;
+
+    scheduleApprovedQuote(quoteId, scheduledDate, scheduledTime, technician, employeeId);
+    updateQuoteStatus(quoteId, 'aprovado');
     setIsAgendarModalOpen(false);
     setQuoteToSchedule(null);
     
     // Format date for the toast to dd/mm/yyyy
-    const parts = scheduledDate.split('-');
+    const parts = scheduledDate ? scheduledDate.split('-') : [];
     const formattedDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : scheduledDate;
 
     toast.success('Serviço agendado com sucesso!', {
-      description: `${quoteToSchedule.client.name} — ${formattedDate} às ${scheduledTime}`
+      description: `${clientName} — ${formattedDate} às ${scheduledTime}`
     });
   };
 
@@ -220,12 +223,12 @@ export function ServicoConfirmacaoPage() {
             <div>
               <span className="text-[10px] font-mono font-bold text-slate-400 tracking-wider">CÓDIGO: {q.id}</span>
               <span className="block text-xs font-mono font-semibold text-slate-400 mt-0.5">
-                Criado em {new Date(q.createdAt).toLocaleDateString('pt-BR')}
+                Criado em {q.createdAt ? new Date(q.createdAt).toLocaleDateString('pt-BR') : 'Data não informada'}
               </span>
-              {q.scheduledDate && (
+              {q.scheduledDate && typeof q.scheduledDate === 'string' && (
                 <span className="block text-[11px] font-semibold text-[#2D6A4F] mt-1.5 flex items-center gap-1">
                   <Calendar className="size-3.5 shrink-0" />
-                  Agendado para {q.scheduledDate.split('-').reverse().join('/')} às {q.scheduledTime}
+                  Agendado para {q.scheduledDate.includes('-') ? q.scheduledDate.split('-').reverse().join('/') : q.scheduledDate} {q.scheduledTime ? `às ${q.scheduledTime}` : ''}
                 </span>
               )}
             </div>
@@ -678,7 +681,7 @@ export function ServicoConfirmacaoPage() {
                             <div>
                               <span className="text-[10px] font-mono text-slate-400 font-bold tracking-wider">RETORNO ID: {q.id}</span>
                               <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                Registrado em: {new Date(q.createdAt).toLocaleDateString('pt-BR')}
+                                Registrado em: {q.createdAt ? new Date(q.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                               </p>
                             </div>
                             <span className="px-2.5 py-1 bg-amber-50 text-amber-800 text-[9px] font-mono font-bold uppercase rounded-md flex items-center gap-1">
@@ -775,12 +778,14 @@ export function ServicoConfirmacaoPage() {
       </AnimatePresence>
 
       {/* SCHEDULING MODAL */}
-      <AgendarServicoModal
-        quote={quoteToSchedule!}
-        isOpen={isAgendarModalOpen}
-        onClose={() => { setIsAgendarModalOpen(false); setQuoteToSchedule(null); }}
-        onConfirm={handleConfirmarAgendamento}
-      />
+      {isAgendarModalOpen && quoteToSchedule && (
+        <AgendarServicoModal
+          quote={quoteToSchedule}
+          isOpen={isAgendarModalOpen}
+          onClose={() => { setIsAgendarModalOpen(false); setQuoteToSchedule(null); }}
+          onConfirm={handleConfirmarAgendamento}
+        />
+      )}
 
       {/* REJECTION MODAL */}
       <AnimatePresence>

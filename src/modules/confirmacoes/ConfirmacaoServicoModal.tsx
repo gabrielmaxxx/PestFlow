@@ -11,12 +11,14 @@ import {
 import { motion } from 'motion/react';
 
 interface ConfirmacaoServicoModalProps {
-  quote: Quote;
+  quote?: Quote | null;
   onConfirm: (confirmedBy: string, notes: string) => void;
   onClose: () => void;
 }
 
 export function ConfirmacaoServicoModal({ quote, onConfirm, onClose }: ConfirmacaoServicoModalProps) {
+  if (!quote) return null;
+
   const [confirmedBy, setConfirmedBy] = useState('');
   const [serviceNotes, setServiceNotes] = useState('');
   const [hasConfirmedCheckbox, setHasConfirmedCheckbox] = useState(false);
@@ -95,7 +97,7 @@ export function ConfirmacaoServicoModal({ quote, onConfirm, onClose }: Confirmac
                 <div>
                   <span className="block text-[8px] font-mono text-slate-400 font-bold uppercase">Cliente</span>
                   <strong className="text-[#141410] text-sm block mt-0.5">{quote.client?.name || 'Cliente Não Informado'}</strong>
-                  {quote.client?.address && <span className="text-[11px] text-[#706F65] block mt-0.5">{quote.client.address}</span>}
+                  {quote.client?.address && <span className="text-[11px] text-[#706F65] block mt-0.5">{quote.client?.address}</span>}
                 </div>
                 <div className="text-right">
                   <span className="block text-[8px] font-mono text-slate-400 font-bold uppercase">Valor Final</span>
@@ -114,12 +116,12 @@ export function ConfirmacaoServicoModal({ quote, onConfirm, onClose }: Confirmac
                 </div>
                 {quote.service?.areaM2 && (
                   <div>
-                    <strong className="font-semibold text-[#141410]">Área Operativa:</strong> {quote.service.areaM2} m²
+                    <strong className="font-semibold text-[#141410]">Área Operativa:</strong> {quote.service?.areaM2} m²
                   </div>
                 )}
                 {quote.service?.distanceKm && (
                   <div>
-                    <strong className="font-semibold text-[#141410]">Deslocamento:</strong> {quote.service.distanceKm} Km
+                    <strong className="font-semibold text-[#141410]">Deslocamento:</strong> {quote.service?.distanceKm} Km
                   </div>
                 )}
               </div>

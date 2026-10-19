@@ -638,7 +638,7 @@ export function ClientesPage() {
     e.preventDefault();
     if (!activeClient) return;
 
-    const clientQuote = quotes?.list?.find(q => q.client.name.toLowerCase() === activeClient.name.toLowerCase());
+    const clientQuote = quotes?.list?.find(q => q.client?.name && q.client.name.toLowerCase() === activeClient.name.toLowerCase());
     let targetQuoteId = clientQuote?.id;
 
     if (!targetQuoteId) {

@@ -11,7 +11,7 @@ import {
   EmpresaWithUserCount,
 } from '@/services/superadmin/superAdminService';
 import { useAuth } from '@/auth/hooks/useAuth';
-import { HeaderMetric, HeaderMetricGroup } from '@/components/HeaderMetric';
+import { AppPageHeader } from '@/components/AppPageHeader';
 import {
   SuperAdminTabs,
   SuperAdminDashboardTab,
@@ -240,83 +240,53 @@ export function SuperAdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
-      {/* Top Banner / Super Admin Brand Header with HeaderMetrics */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-8">
-            <div className="flex items-center gap-3">
-              <div className="size-11 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/20 text-white font-black shrink-0">
-                <ShieldAlert className="size-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-black text-white tracking-wide">PestFlow Super-Admin</h1>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Plataforma Central
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">
-                  Gestão Global Multi-Tenant • Operador:{' '}
-                  <span className="text-amber-400 font-semibold">{user?.name || 'Gabriel'}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Header Metrics sem borda nem fundo */}
-            <HeaderMetricGroup
-              id="header-metrics-superadmin"
-              className="pt-2 lg:pt-0 border-t lg:border-t-0 lg:border-l border-slate-800 lg:pl-8 [&_.text-slate-900]:text-white [&_.text-slate-500]:text-slate-400"
-            >
-              <HeaderMetric
-                id="metric-superadmin-ativas"
-                label="Empresas Ativas"
-                value={String(activeCount)}
-                delta={{ value: 'Operação normal', direction: 'up' }}
-              />
-              <HeaderMetric
-                id="metric-superadmin-suspensas"
-                label="Empresas Suspensas"
-                value={String(suspendedCount)}
-                delta={
+      {/* Top Banner / Super Admin Brand Header with AppPageHeader */}
+      <div className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <AppPageHeader
+            title="PestFlow Super-Admin"
+            description={`Gestão Global Multi-Tenant • Operador: ${user?.name || 'Gabriel'}`}
+            statusSlot={
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Plataforma Central
+              </span>
+            }
+            primaryAction={{
+              label: 'Nova Empresa',
+              icon: PlusCircle,
+              onClick: () => setIsCreateModalOpen(true),
+            }}
+            secondaryAction={{
+              label: 'Atualizar',
+              icon: RefreshCw,
+              onClick: () => loadData(true),
+            }}
+            metrics={[
+              {
+                label: 'Empresas Ativas',
+                value: String(activeCount),
+              },
+              {
+                label: 'Empresas Suspensas',
+                value: String(suspendedCount),
+                delta:
                   suspendedCount > 0
                     ? { value: `${suspendedCount} bloqueada(s)`, direction: 'down' }
-                    : { value: 'Nenhuma suspensa', direction: 'neutral' }
-                }
-              />
-              <HeaderMetric
-                id="metric-superadmin-pendencias"
-                label="Pendências Financeiras"
-                value={String(pendingCount)}
-                delta={
+                    : undefined,
+              },
+              {
+                label: 'Pendências Financeiras',
+                value: String(pendingCount),
+                delta:
                   pendingCount > 0
                     ? { value: `${pendingCount} em atraso`, direction: 'down' }
-                    : { value: '100% em dia', direction: 'up' }
-                }
-              />
-            </HeaderMetricGroup>
-          </div>
-
-          <div className="flex items-center gap-2 self-start xl:self-auto shrink-0">
-            <button
-              id="btn-superadmin-refresh"
-              onClick={() => loadData(true)}
-              disabled={refreshing}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-2 transition-all border border-slate-700 cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`size-3.5 ${refreshing ? 'animate-spin text-amber-400' : ''}`} />
-              Atualizar
-            </button>
-            <button
-              id="btn-superadmin-nova-empresa"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-amber-600/30 cursor-pointer"
-            >
-              <PlusCircle className="size-4" />
-              Nova Empresa
-            </button>
-          </div>
+                    : undefined,
+              },
+            ]}
+            className="dark [&_[data-slot=page-header-actions]_button:first-child]:bg-slate-800 [&_[data-slot=page-header-actions]_button:first-child]:text-slate-200 [&_[data-slot=page-header-actions]_button:first-child]:border-slate-700 [&_[data-slot=page-header-actions]_button:first-child]:hover:bg-slate-700 [&_[data-slot=page-header-actions]_button:last-child]:bg-amber-600 [&_[data-slot=page-header-actions]_button:last-child]:hover:bg-amber-500 [&_[data-slot=page-header-actions]_button:last-child]:text-white [&_[data-slot=page-header-actions]_button:last-child]:border-transparent"
+          />
         </div>
-      </header>
+      </div>
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">

@@ -31,7 +31,7 @@ import { InventorySupplierImportTab } from './components/InventorySupplierImport
 import { ProductDetailSheet } from './components/ProductDetailSheet';
 import { ProductFormDialog } from './components/ProductFormDialog';
 import { QuickMoveDialog } from './components/QuickMoveDialog';
-import { HeaderMetric, HeaderMetricGroup } from '@/components/HeaderMetric';
+import { AppPageHeader } from '@/components/AppPageHeader';
 
 export function InventoryPage() {
   const {
@@ -668,86 +668,57 @@ export function InventoryPage() {
       id="estoque-operational-root"
       className="space-y-6 text-slate-900 font-sans antialiased text-left pb-16"
     >
-      {/* 1. TOP HEADER SECTION */}
-      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6 border-b border-slate-200 pb-5">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-8">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight font-display text-slate-950 flex items-center gap-2">
-              <Layers className="size-8 text-[#1B3A2D]" /> Estoque
-            </h1>
-            <p className="text-sm text-slate-500 mt-1 max-w-md">
-              Gerencie produtos, movimentações, consumo e abastecimento.
-            </p>
-          </div>
-
-          {/* Header Metrics sem borda nem caixa */}
-          <HeaderMetricGroup id="header-metrics-inventory" className="pt-2 lg:pt-0 border-t lg:border-t-0 lg:border-l border-slate-200/60 lg:pl-8">
-            <HeaderMetric
-              id="metric-inventory-produtos"
-              label="Produtos Cadastrados"
-              value={String(products.length)}
-            />
-            <HeaderMetric
-              id="metric-inventory-valor-total"
-              label="Valor Total em Estoque"
-              value={`R$ ${totalStockValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            />
-            <HeaderMetric
-              id="metric-inventory-criticos"
-              label="Estoque Crítico"
-              value={String(criticalProductsCount)}
-              delta={
-                criticalProductsCount > 0
-                  ? { value: `${criticalProductsCount} crítico(s)`, direction: 'down' }
-                  : { value: 'Nível adequado', direction: 'up' }
-              }
-            />
-          </HeaderMetricGroup>
-        </div>
-
-        {/* Buttons right aligned */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <Button
-            id="btn-novo-produto"
-            onClick={openCreateModal}
-            className="bg-[#1B3A2D] hover:bg-[#1B3A2D]/90 text-white font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer shadow-sm flex items-center gap-2"
-          >
-            <Plus className="size-3.5" /> Novo Produto
-          </Button>
-          <Button
-            id="btn-regist-entrada"
-            variant="outline"
-            onClick={() => {
-              setQuickMoveType('entrada');
-              setIsQuickMoveOpen(true);
-            }}
-            className="border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5"
-          >
-            <ArrowUpRight className="size-3.5 text-emerald-600" /> Registrar Entrada
-          </Button>
-          <Button
-            id="btn-regist-saida"
-            variant="outline"
-            onClick={() => {
+      {/* CABEÇALHO PADRONIZADO VIA AppPageHeader */}
+      <AppPageHeader
+        title="Estoque"
+        description="Gerencie produtos, movimentações, consumo e abastecimento."
+        primaryAction={{
+          label: 'Novo Produto',
+          icon: Plus,
+          onClick: openCreateModal,
+        }}
+        secondaryAction={{
+          label: 'Registrar Entrada',
+          icon: ArrowUpRight,
+          onClick: () => {
+            setQuickMoveType('entrada');
+            setIsQuickMoveOpen(true);
+          },
+        }}
+        moreActions={[
+          {
+            label: 'Registrar Saída',
+            icon: ArrowDownLeft,
+            onClick: () => {
               setQuickMoveType('saida');
               setIsQuickMoveOpen(true);
-            }}
-            className="border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5"
-          >
-            <ArrowDownLeft className="size-3.5 text-rose-600" /> Registrar Saída
-          </Button>
-          <Button
-            id="btn-import-planilha"
-            variant="outline"
-            onClick={() => {
-              setActiveTab('upload_entry');
-            }}
-            className="border-emerald-600/30 hover:bg-emerald-50 text-emerald-800 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5"
-          >
-            <FileSpreadsheet className="size-3.5" /> Importar Planilha
-          </Button>
-        </div>
-      </div>
+            },
+          },
+          {
+            label: 'Importar Planilha',
+            icon: FileSpreadsheet,
+            onClick: () => setActiveTab('upload_entry'),
+          },
+        ]}
+        metrics={[
+          {
+            label: 'Produtos Cadastrados',
+            value: String(products.length),
+          },
+          {
+            label: 'Valor em Estoque',
+            value: `R$ ${totalStockValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          },
+          {
+            label: 'Alertas',
+            value: String(criticalProductsCount),
+            delta:
+              criticalProductsCount > 0
+                ? { value: `${criticalProductsCount} crítico(s)`, direction: 'down' }
+                : undefined,
+          },
+        ]}
+      />
 
       {/* TABS OFICIAIS */}
       <InventoryTabs
